@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Partita Basket Ufficio</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      margin: 0; padding: 1rem;
+      color: #333;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    h1, h2 {
+      text-align: center;
+      color: #83ae30;
+    }
+    #lista-partite {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 2rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgb(0 0 0 / 0.1);
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    #lista-partite li {
+      align-items: center;
+      padding: 0.8rem 1rem;
+      border-bottom: 1px solid #eee;
+    }
+    #lista-partite li:last-child {
+      border-bottom: none;
+    }
+    .giocatore-info {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+    .avatar {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      margin-right: 12px;
+      border: 2px solid transparent;
+      flex-shrink: 0;
+    }
+    .vincitore .avatar {
+      border-color: #83ae30;
+    }
+    .vincitore .nome {
+      font-weight: 700;
+      color: #83ae30;
+    }
+    .nome {
+      font-weight: 600;
+      margin-right: 10px;
+    }
+    .punteggio {
+      font-size: 1.1rem;
+      font-weight: 700;
+      min-width: 25px;
+      text-align: right;
+      color: #555;
+    }
+    #form-partita {
+      background: white;
+      padding: 1rem 1.2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
+    }
+    .giocatore {
+      display: flex;
+      gap: 0.8rem;
+      margin-bottom: 0.7rem;
+      align-items: center;
+      gap: 0.8rem;
+    }
+    input[type="text"], input[type="number"] {
+      flex-grow: 1;
+      padding: 0.4rem 0.6rem;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+    input[type="number"] {
+      width: 80px;
+      text-align: center;
+    }
+    select {
+      flex-grow: 1;
+      padding: 0.4rem 0.6rem;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      background-color: #fff;
+    }
+    button {
+      background-color: #83ae30;
+      border: none;
+      color: white;
+      padding: 0.5rem 1.2rem;
+      font-weight: 700;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.25s ease;
+    }
+    button:hover:not(:disabled) {
+      background-color: #06306b;
+    }
+    button:disabled {
+      background-color: #999;
+      cursor: not-allowed;
+    }
+    .btn-remove {
+      background: #d33;
+      font-weight: 700;
+      padding: 0 0.6rem;
+      border-radius: 50%;
+      line-height: 1.3;
+      font-size: 1.2rem;
+    }
+    .btn-remove:hover {
+      background: #a00;
+    }
+    #aggiungi-giocatore-btn {
+      margin-bottom: 1rem;
+      background-color: #1a73e8;
+    }
+    #aggiungi-giocatore-btn:hover {
+      background-color: #155ab6;
+    }
+    #message {
+      margin-top: 1rem;
+      font-weight: 600;
+      text-align: center;
+      color: #d33;
+    }
+
+    #salva-partita-btn {
+      font-size: 1.1rem;
+      padding: 0.8rem 1.6rem;
+      margin-top: 1rem;
+    } 
+  </style>
+</head>
+<body>
+
+  <h1>IOL Mobile App Basket</h1>
+
+  <ul id="lista-partite" aria-live="polite" aria-relevant="additions"></ul>
+
+  <section id="form-partita" aria-label="Aggiungi nuova partita">
+    <h2>Nuova partita</h2>
+
+    <label for="data-partita">Data partita:</label>
+    <input type="date" id="data-partita" required />
+    <br /><br />
+    <div id="giocatori-container"></div>
+    <button id="aggiungi-giocatore-btn" type="button">+ Aggiungi giocatore</button>
+    <br />
+    <div style="text-align: right;">
+      <button id="salva-partita-btn" type="button">💾 Aggiungi partita</button>
+    </div>
+    <p id="message" role="alert"></p>
+  </section>
+
+  <script>
+    const BIN_ID = '685008f88a456b7966af054c';
+    const API_KEY = '$2a$10$cEHKzlSJVBpENNlazaGOmOsiBxtNzzbWp5qBPExxp9zXvkhrN//wi';
+    const BASE_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+
+    const listaPartiteEl = document.getElementById('lista-partite');
+    const containerGiocatori = document.getElementById('giocatori-container');
+    const btnAggiungiGiocatore = document.getElementById('aggiungi-giocatore-btn');
+    const btnSalvaPartita = document.getElementById('salva-partita-btn');
+    const messageEl = document.getElementById('message');
+    const formPartita = document.getElementById('form-partita');
+
+    function creaAvatarUrl(name) {
+      // Usando DiceBear Avatars con style "identicon"
+      return `https://avatars.dicebear.com/api/identicon/${encodeURIComponent(name)}.svg`;
+    }
+
+    function creaGiocatoreInput() {
+      const div = document.createElement('div');
+      div.classList.add('giocatore');
+      div.style.alignItems = 'center';
+
+      const selectNome = document.createElement('select');
+      selectNome.required = true;
+      selectNome.setAttribute('aria-label', 'Nome giocatore');
+
+      const giocatori = ['Sbaruffa', 'Max', 'Ema', 'Ste', 'Pam', 'Claudia'];
+      const optionDefault = document.createElement('option');
+      optionDefault.value = '';
+      optionDefault.textContent = '-- Seleziona --';
+      optionDefault.disabled = true;
+      optionDefault.selected = true;
+      selectNome.appendChild(optionDefault);
+
+      giocatori.forEach(nome => {
+        const option = document.createElement('option');
+        option.value = nome;
+        option.textContent = nome;
+        selectNome.appendChild(option);
+      });
+      selectNome.addEventListener('change', () => {
+        aggiornaSelectDisabilitati();
+      });
+
+      const inputPunti = document.createElement('input');
+      inputPunti.type = 'number';
+      inputPunti.min = '0';
+      inputPunti.placeholder = 'Punti';
+      inputPunti.required = true;
+      inputPunti.setAttribute('aria-label', 'Punti giocatore');
+
+      const btnRimuovi = document.createElement('button');
+      btnRimuovi.type = 'button';
+      btnRimuovi.classList.add('btn-remove');
+      btnRimuovi.textContent = '×';
+      btnRimuovi.title = 'Rimuovi giocatore';
+      btnRimuovi.style.marginTop = '2px';
+      btnRimuovi.onclick = () => div.remove();
+
+      div.appendChild(selectNome);
+      div.appendChild(inputPunti);
+      div.appendChild(btnRimuovi);
+
+      return div;
+    }
+
+    function aggiornaSelectDisabilitati() {
+      const selects = containerGiocatori.querySelectorAll('select');
+      const selezionati = new Set();
+
+      selects.forEach(sel => {
+        if (sel.value) selezionati.add(sel.value);
+      });
+
+      selects.forEach(sel => {
+        const currentValue = sel.value;
+        sel.querySelectorAll('option').forEach(opt => {
+          opt.disabled = selezionati.has(opt.value) && opt.value !== currentValue;
+        });
+      });
+    }
+
+    btnAggiungiGiocatore.addEventListener('click', () => {
+      containerGiocatori.appendChild(creaGiocatoreInput());
+      aggiornaSelectDisabilitati();
+    });
+
+    async function caricaPartite() {
+      messageEl.textContent = '';
+      try {
+        const res = await fetch(BASE_URL + '/latest', {
+          headers: { 'X-Master-Key': API_KEY }
+        });
+        if(!res.ok) throw new Error('Errore caricamento dati');
+        const json = await res.json();
+        const partite = json.record;
+
+        listaPartiteEl.innerHTML = '';
+
+        if (partite.length === 0) {
+          listaPartiteEl.innerHTML = '<li>Nessuna partita registrata</li>';
+          formPartita.style.display = 'block';
+          return;
+        }
+
+        // Ordina partite per data decrescente
+        partite.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+        partite.forEach(partita => {
+          const li = document.createElement('li');
+
+          const btnElimina = document.createElement('button');
+          btnElimina.textContent = '🗑️ Elimina';
+          btnElimina.style.marginLeft = 'auto';
+          btnElimina.style.background = '#D34100';
+          btnElimina.style.border = 'none';
+          btnElimina.style.cursor = 'pointer';
+          btnElimina.title = 'Elimina questa partita';
+          btnElimina.onclick = () => eliminaPartita(partita.data);
+          li.appendChild(btnElimina);
+
+          const header = document.createElement('div');
+          header.textContent = new Date(partita.data).toLocaleDateString('it-IT');
+          header.style.fontWeight = 'bold';
+          header.style.marginBottom = '0.5rem';
+          header.style.marginTop = '0.5rem';
+          li.appendChild(header);
+
+          let maxPunti = Math.max(...partita.giocatori.map(g => g.punteggio));
+          const vincitori = new Set(partita.giocatori.filter(g => g.punteggio === maxPunti).map(g => g.nome));
+
+          partita.giocatori.forEach(g => {
+            const giocDiv = document.createElement('div');
+            giocDiv.classList.add('giocatore-info');
+            if (vincitori.has(g.nome)) giocDiv.classList.add('vincitore');
+
+            const avatar = document.createElement('img');
+            avatar.className = 'avatar';
+            avatar.src = `avatars/${g.nome.toLowerCase()}.jpg`;
+            avatar.alt = `Avatar di ${g.nome}`;
+
+            const nomeSpan = document.createElement('span');
+            nomeSpan.className = 'nome';
+            nomeSpan.textContent = g.nome;
+            if (vincitori.has(g.nome)) {
+              nomeSpan.textContent += ' 🏆';
+            }
+
+            const punteggioSpan = document.createElement('span');
+            punteggioSpan.className = 'punteggio';
+            punteggioSpan.textContent = g.punteggio;
+
+            giocDiv.appendChild(avatar);
+            giocDiv.appendChild(nomeSpan);
+            giocDiv.appendChild(punteggioSpan);
+            li.appendChild(giocDiv);
+          });
+
+          listaPartiteEl.appendChild(li);
+        });
+
+      } catch (err) {
+        messageEl.textContent = 'Errore nel caricamento partite.';
+        console.error(err);
+      }
+
+      const formPartita = document.getElementById('form-partita');
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById('data-partita').value = today;    
+    }
+
+    async function eliminaPartita(dataDaEliminare) {
+      if (!confirm('Sei sicuro di voler eliminare questa partita?')) return;
+
+      try {
+        const res = await fetch(BASE_URL, {
+          headers: { 'X-Master-Key': API_KEY }
+        });
+        if (!res.ok) throw new Error('Errore nel recupero dati');
+
+        const dati = await res.json();
+        let partite = dati.record;
+
+        partite = partite.filter(p => p.data !== dataDaEliminare);
+
+        const resPut = await fetch(BASE_URL, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Master-Key': API_KEY
+          },
+          body: JSON.stringify(partite)
+        });
+
+        if (!resPut.ok) throw new Error('Errore nel salvataggio');
+
+        caricaPartite();
+      } catch (err) {
+        console.error('Errore eliminazione:', err);
+        messageEl.textContent = 'Errore durante l\'eliminazione.';
+      }
+    }
+
+    async function salvaPartita(partita) {
+      try {
+        messageEl.textContent = 'Salvataggio in corso...';
+        // Prima prendo il record attuale, lo aggiorno aggiungendo la nuova partita
+        const resGet = await fetch(BASE_URL, {
+          headers: { 'X-Master-Key': API_KEY }
+        });
+        if(!resGet.ok) throw new Error('Errore nel caricamento dati');
+
+        const dati = await resGet.json();
+        let partite = dati.record;
+
+        if(!Array.isArray(partite)) partite = [];
+
+        partite.push(partita);
+
+        const resPut = await fetch(BASE_URL, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Master-Key': API_KEY
+          },
+          body: JSON.stringify(partite)
+        });
+
+        if(!resPut.ok) throw new Error('Errore nel salvataggio dati');
+
+        messageEl.textContent = 'Partita aggiunta con successo!';
+
+        // pulisco form e ricarico
+        containerGiocatori.innerHTML = '';
+        caricaPartite();
+
+      } catch (err) {
+        messageEl.textContent = 'Errore nel salvataggio partita.';
+        console.error(err);
+      }
+    }
+
+    btnSalvaPartita.addEventListener('click', () => {
+      messageEl.textContent = '';
+      const inputsNome = containerGiocatori.querySelectorAll('select');
+      const inputsPunti = containerGiocatori.querySelectorAll('input[type="number"]');
+
+      if(inputsNome.length === 0) {
+        messageEl.textContent = 'Devi aggiungere almeno un giocatore';
+        return;
+      }
+
+      const inputData = document.getElementById('data-partita');
+      const dataVal = inputData.value;
+      if (!dataVal) {
+        messageEl.textContent = 'Inserisci la data della partita';
+        return;
+      }
+
+      const giocatori = [];
+
+      for(let i=0; i<inputsNome.length; i++) {
+        const nome = inputsNome[i].value.trim();
+        const punti = parseInt(inputsPunti[i].value, 10);
+
+        if(!nome) {
+          messageEl.textContent = 'Inserisci tutti i nomi giocatori';
+          return;
+        }
+        if(isNaN(punti) || punti < 0) {
+          messageEl.textContent = 'Inserisci punteggi validi (>=0)';
+          return;
+        }
+        giocatori.push({ nome, punteggio: punti });
+      }
+
+      const partita = {
+        data: new Date(dataVal).toISOString(),
+        giocatori
+      };
+
+      salvaPartita(partita);
+    });
+
+    // All'avvio aggiungo due giocatori di default
+    containerGiocatori.appendChild(creaGiocatoreInput());
+    containerGiocatori.appendChild(creaGiocatoreInput());
+    aggiornaSelectDisabilitati();
+
+    // Carico partite al caricamento pagina
+    caricaPartite();
+  </script>
+</body>
+</html>
