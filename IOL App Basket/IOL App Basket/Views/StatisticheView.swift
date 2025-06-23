@@ -60,15 +60,8 @@ struct StatisticheView: View {
 
                 ForEach(stats) { stat in
                     HStack {
-                        AsyncImage(url: URL(string: "https://github.com/mappil/iolbasket/blob/main/avatars/\(stat.nome.lowercased()).jpg?raw=true")) { image in
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                        } placeholder: {
-                            Color.gray.opacity(0.3)
-                        }
+                        AvatarView(name: stat.nome)
                         .frame(width: 32, height: 32)
-                        .clipShape(Circle())
 
                         Text(stat.nome)
                         Spacer()

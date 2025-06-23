@@ -31,15 +31,8 @@ struct NuovaPartitaView: View {
             ForEach(tuttiGiocatori, id: \.self) { nome in
                 Section {
                     HStack {
-                        AsyncImage(url: URL(string: "https://github.com/mappil/iolbasket/blob/main/avatars/\(nome.lowercased()).jpg?raw=true")) { image in
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                        } placeholder: {
-                            Color.gray.opacity(0.3)
-                        }
+                        AvatarView(name: nome)
                         .frame(width: 40, height: 40)
-                        .clipShape(Circle())
                         
                         Toggle(nome, isOn: Binding(
                             get: { selezionati.contains(nome) },

@@ -18,15 +18,8 @@ struct PartitaListView: View {
                     Section {
                         ForEach(partita.giocatori) { g in
                             HStack {
-                                AsyncImage(url: URL(string: "https://github.com/mappil/iolbasket/blob/main/avatars/\(g.nome.lowercased()).jpg?raw=true")) { image in
-                                    image
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                } placeholder: {
-                                    Color.gray.opacity(0.2)
-                                }
+                                AvatarView(name: g.nome)
                                 .frame(width: 40, height: 40)
-                                .clipShape(Circle())
                                 
                                 Text(g.nome)
                                 Spacer()
