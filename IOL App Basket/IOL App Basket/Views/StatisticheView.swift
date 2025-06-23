@@ -41,41 +41,45 @@ struct StatisticheView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading) {
-                Text("Statistiche Giocatori")
-                    .font(.title2.bold())
-                    .padding(.bottom)
-
-                Chart(stats) { stat in
-                    BarMark(
-                        x: .value("Giocatore", stat.nome),
-                        y: .value("Punti", stat.punti)
-                    )
-                    .foregroundStyle(by: .value("Giocatore", stat.nome))
-                }
-                .frame(height: 250)
-
-                Divider().padding(.vertical)
-
-                ForEach(stats) { stat in
-                    HStack {
-                        AvatarView(name: stat.nome)
-                        .frame(width: 32, height: 32)
-
-                        Text(stat.nome)
-                        Spacer()
-                        Text("🏆 \(stat.vinte)  |  \(stat.punti) punti")
-                            .bold()
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading) {
+                    Text("Statistiche Giocatori")
+                        .font(.title2.bold())
+                        .padding(.bottom)
+                    
+                    Chart(stats) { stat in
+                        BarMark(
+                            x: .value("Giocatore", stat.nome),
+                            y: .value("Punti", stat.punti)
+                        )
+                        .foregroundStyle(by: .value("Giocatore", stat.nome))
                     }
-                    .padding(.vertical, 4)
+                    .frame(height: 250)
+                    
+                    Divider().padding(.vertical)
+                    
+                    ForEach(stats) { stat in
+                        HStack {
+                            AvatarView(name: stat.nome)
+                                .frame(width: 32, height: 32)
+                            
+                            Text(stat.nome)
+                            Spacer()
+                            Text("🏆 \(stat.vinte)  |  \(stat.punti) punti")
+                                .bold()
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+                .padding()
+                .onAppear {
+                    Task {
+                        await viewModel.caricaPartite()
+                    }
                 }
             }
-            .padding()
-            .onAppear {
-                viewModel.caricaPartite()
-            }
+            .navigationTitle("Statistiche")
         }
-        .navigationTitle("Statistiche")
     }
 }

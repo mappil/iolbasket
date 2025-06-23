@@ -13,71 +13,82 @@ class PartiteViewModel: ObservableObject {
     private let baseURL = "https://api.jsonbin.io/v3/b/685008f88a456b7966af054c"
     private let apiKey = "$2a$10$cEHKzlSJVBpENNlazaGOmOsiBxtNzzbWp5qBPExxp9zXvkhrN//wi"
 
-    func caricaPartite() {
+    @MainActor
+    func caricaPartite() async {
         guard let url = URL(string: "\(baseURL)/latest") else { return }
+
         var req = URLRequest(url: url)
         req.setValue(apiKey, forHTTPHeaderField: "X-Master-Key")
-        
-        URLSession.shared.dataTask(with: req) { data, _, _ in
-            if let data = data {
-                if let wrapper = try? JSONDecoder().decode(BinWrapper.self, from: data) {
-                    DispatchQueue.main.async {
-                        self.partite = wrapper.record.sorted { $0.data > $1.data }
-                    }
-                }
-            }
-        }.resume()
+
+        do {
+            let (data, _) = try await URLSession.shared.data(for: req)
+            let wrapper = try JSONDecoder().decode(BinWrapper.self, from: data)
+
+            // Aggiorna la proprietà @Published direttamente su main thread grazie a @MainActor
+            self.partite = wrapper.record.sorted { $0.data > $1.data }
+
+        } catch {
+            print("Errore in caricaPartite: \(error)")
+        }
     }
 
-    func salvaPartita(_ nuova: Partita) {
+    func salvaPartita(_ nuova: Partita) async {
         guard let getURL = URL(string: baseURL) else { return }
+
         var getReq = URLRequest(url: getURL)
         getReq.setValue(apiKey, forHTTPHeaderField: "X-Master-Key")
 
-        URLSession.shared.dataTask(with: getReq) { [self] data, _, _ in
-            guard let data = data,
-                  var wrapper = try? JSONDecoder().decode(BinWrapper.self, from: data) else { return }
+        do {
+            let (data, _) = try await URLSession.shared.data(for: getReq)
+            var wrapper = try JSONDecoder().decode(BinWrapper.self, from: data)
 
-            // Sostituisci se data già esiste
             if let index = wrapper.record.firstIndex(where: { $0.data == nuova.data }) {
                 wrapper.record[index] = nuova
             } else {
                 wrapper.record.append(nuova)
             }
 
-            guard let putURL = URL(string: self.baseURL) else { return }
+            guard let putURL = URL(string: baseURL) else { return }
+
             var putReq = URLRequest(url: putURL)
             putReq.httpMethod = "PUT"
             putReq.setValue("application/json", forHTTPHeaderField: "Content-Type")
             putReq.setValue(apiKey, forHTTPHeaderField: "X-Master-Key")
-            putReq.httpBody = try? JSONEncoder().encode(wrapper.record)
+            putReq.httpBody = try JSONEncoder().encode(wrapper.record)
 
-            URLSession.shared.dataTask(with: putReq).resume()
-        }.resume()
+            _ = try await URLSession.shared.data(for: putReq)
+
+        } catch {
+            print("Errore in salvaPartita: \(error)")
+        }
     }
 
-    func eliminaPartita(id: String) {
-        guard let getURL = URL(string: self.baseURL) else { return }
+    func eliminaPartita(id: String) async {
+        guard let getURL = URL(string: baseURL) else { return }
+
         var getReq = URLRequest(url: getURL)
         getReq.setValue(apiKey, forHTTPHeaderField: "X-Master-Key")
 
-        partite.removeAll { $0.data == id }
-
-        URLSession.shared.dataTask(with: getReq) { data, _, _ in
-            guard let data = data,
-                  var wrapper = try? JSONDecoder().decode(BinWrapper.self, from: data) else { return }
+        do {
+            let (data, _) = try await URLSession.shared.data(for: getReq)
+            var wrapper = try JSONDecoder().decode(BinWrapper.self, from: data)
 
             wrapper.record.removeAll { $0.data == id }
 
-            guard let putURL = URL(string: self.baseURL) else { return }
+            guard let putURL = URL(string: baseURL) else { return }
+
             var putReq = URLRequest(url: putURL)
             putReq.httpMethod = "PUT"
             putReq.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            putReq.setValue(self.apiKey, forHTTPHeaderField: "X-Master-Key")
-            putReq.httpBody = try? JSONEncoder().encode(wrapper.record)
+            putReq.setValue(apiKey, forHTTPHeaderField: "X-Master-Key")
+            putReq.httpBody = try JSONEncoder().encode(wrapper.record)
 
-            URLSession.shared.dataTask(with: putReq).resume()
-            self.caricaPartite()
-        }.resume()
+            _ = try await URLSession.shared.data(for: putReq)
+
+            await caricaPartite() // Assicurati che anche questa sia async
+
+        } catch {
+            print("Errore in eliminaPartita: \(error)")
+        }
     }
 }

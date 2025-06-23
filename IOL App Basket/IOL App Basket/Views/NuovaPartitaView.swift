@@ -26,6 +26,8 @@ struct NuovaPartitaView: View {
 
     var body: some View {
         Form {
+            EmptyView()
+            
             DatePicker("Data", selection: $data, displayedComponents: .date)
 
             ForEach(tuttiGiocatori, id: \.self) { nome in
@@ -61,9 +63,11 @@ struct NuovaPartitaView: View {
                     Giocatore(nome: $0, punteggio: punteggi[$0] ?? 0)
                 }
                 let isoData = ISO8601DateFormatter().string(from: data)
-                let nuova = Partita(data: isoData, giocatori: giocatori)
-                viewModel.salvaPartita(nuova)
-                dismiss()
+                Task {
+                    let nuova = Partita(data: isoData, giocatori: giocatori)
+                    await viewModel.salvaPartita(nuova)
+                    dismiss()
+                }
             }
             .disabled(selezionati.isEmpty)
         }

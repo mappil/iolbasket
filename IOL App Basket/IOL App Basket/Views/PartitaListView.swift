@@ -13,17 +13,25 @@ struct PartitaListView: View {
     
     var body: some View {
         NavigationStack {
+            if viewModel.partite.isEmpty {
+                VStack {
+                    Spacer()
+                    Text("Caricamento in corso...")
+                    Spacer()
+                }
+            }
             List {
+                
                 ForEach(viewModel.partite) { partita in
                     Section {
                         ForEach(partita.giocatori) { g in
                             HStack {
                                 AvatarView(name: g.nome)
-                                .frame(width: 40, height: 40)
+                                    .frame(width: 40, height: 40)
                                 
                                 Text(g.nome)
                                 Spacer()
-                  
+                                
                                 if g.punteggio == punteggioMassimo(partita) {
                                     Text("🏆")
                                 }
@@ -44,18 +52,27 @@ struct PartitaListView: View {
                         }
                     }
                 }
+                
             }
             .navigationTitle("IOL Mobile App Basket")
             .toolbar {
-                NavigationLink("Aggiungi", destination: NuovaPartitaView())
+                NavigationLink(destination: NuovaPartitaView()) {
+                    Image(systemName: "plus")
+                        .foregroundColor(.white)
+                }
+                
             }
             .onAppear {
-                viewModel.caricaPartite()
+                Task {
+                    await viewModel.caricaPartite()
+                }
             }
             .alert("Sei sicuro di voler eliminare questa partita?", isPresented: .constant(partitaDaEliminare != nil), presenting: partitaDaEliminare) { partita in
                 Button("Elimina", role: .destructive) {
-                    viewModel.eliminaPartita(id: partita.id)
-                    partitaDaEliminare = nil
+                    Task {
+                        await viewModel.eliminaPartita(id: partita.id)
+                        partitaDaEliminare = nil
+                    }
                 }
                 Button("Annulla", role: .cancel) {
                     partitaDaEliminare = nil
@@ -84,7 +101,7 @@ struct PartitaListView: View {
                 return DateFormatter.localizedString(from: date, dateStyle: .medium, timeStyle: .none)
             }
         }
-
+        
         return iso // fallback finale
     }
 }
