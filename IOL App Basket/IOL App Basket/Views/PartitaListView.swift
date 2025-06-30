@@ -27,7 +27,7 @@ struct PartitaListView: View {
                         ForEach(partita.giocatori) { g in
                             HStack {
                                 AvatarView(name: g.nome)
-                                    .frame(width: 40, height: 40)
+                                    .frame(width: 80, height: 80)
                                 
                                 Text(g.nome)
                                 Spacer()
