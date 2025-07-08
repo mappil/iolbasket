@@ -29,7 +29,7 @@ struct PartitaListView: View {
                                 AvatarView(name: g.nome)
                                     .frame(width: 80, height: 80)
                                 
-                                Text(g.nome)
+                                Text(g.nomeWithDevice)
                                 Spacer()
                                 
                                 if g.punteggio == punteggioMassimo(partita) {

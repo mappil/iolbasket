@@ -37,21 +37,45 @@ struct StatisticheView: View {
         return punteggi.map { (nome, punti) in
             Stat(nome: nome, punti: punti, vinte: vittorie[nome, default: 0])
         }
-        .sorted { $0.punti > $1.punti }
+        .sorted { ($0.vinte, $0.punti) > ($1.vinte, $1.punti) }
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
+                
                 VStack(alignment: .leading) {
-                    Text("Statistiche Giocatori")
+                    Text("Classifica")
+                        .font(.title2.bold())
+                    
+                    ForEach(Array(stats.enumerated()), id: \.offset) { index, stat in
+                        HStack(alignment: .center) {
+                                                        
+                            Text(getBadge(index: index))
+                                .frame(width: 24)
+                            
+                            AvatarView(name: stat.nome)
+                                .frame(width: 60, height: 60)
+                            
+                            Text(stat.nome)
+                            Spacer()
+                            Text("🏆 \(stat.vinte)  |  \(stat.punti) punti")
+                                .bold()
+                        }
+                        .frame(height: 50)
+                        Divider()
+                    }
+                    Spacer()
+                        .frame(height: 20)
+                    
+                    Text("Vittorie")
                         .font(.title2.bold())
                         .padding(.bottom)
                     
                     Chart(stats) { stat in
                         BarMark(
                             x: .value("Giocatore", stat.nome),
-                            y: .value("Punti", stat.punti)
+                            y: .value("Vittorie", stat.vinte)
                         )
                         .foregroundStyle(by: .value("Giocatore", stat.nome))
                     }
@@ -59,18 +83,19 @@ struct StatisticheView: View {
                     
                     Divider().padding(.vertical)
                     
-                    ForEach(stats) { stat in
-                        HStack {
-                            AvatarView(name: stat.nome)
-                                .frame(width: 32, height: 32)
-                            
-                            Text(stat.nome)
-                            Spacer()
-                            Text("🏆 \(stat.vinte)  |  \(stat.punti) punti")
-                                .bold()
-                        }
-                        .padding(.vertical, 4)
+                    Text("Punti")
+                        .font(.title2.bold())
+                        .padding(.bottom)
+                    
+                    Chart(stats) { stat in
+                        BarMark(
+                            x: .value("Giocatore", stat.nome),
+                            y: .value("Vittorie", stat.vinte)
+                        )
+                        .foregroundStyle(by: .value("Giocatore", stat.nome))
                     }
+                    .frame(height: 250)
+                    
                 }
                 .padding()
                 .onAppear {
@@ -82,4 +107,20 @@ struct StatisticheView: View {
             .navigationTitle("Statistiche")
         }
     }
+    
+    func getBadge(index: Int) -> String {
+        var badge: String = "\(index + 1)"
+        switch index {
+        case 0: badge = "🥇"
+        case 1: badge = "🥈"
+        case 2: badge = "🥉"
+        default: badge = "\(index + 1)"
+        }
+        
+        return badge
+    }
+}
+
+#Preview {
+    StatisticheView(viewModel: .init())
 }

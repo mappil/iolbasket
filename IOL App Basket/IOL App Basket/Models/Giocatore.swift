@@ -11,4 +11,18 @@ struct Giocatore: Codable, Identifiable, Equatable {
     let id: UUID = UUID()
     let nome: String
     let punteggio: Int
+    
+    var device: String {
+        switch nome.lowercased() {
+        case "max", "ste":
+            return ""
+        default:
+            return "🤖"
+        }
+    }
+    
+    var nomeWithDevice: String {
+        "\(nome) \(device)"
+    }
+    
 }

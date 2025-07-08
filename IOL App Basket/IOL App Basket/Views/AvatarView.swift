@@ -73,7 +73,7 @@ private extension CachedURLResponse {
         if let date = (self.userInfo?["timestamp"] as? Date) {
             return date
         } else {
-            return Date.distantPast
+            return Date()
         }
     }
 }
